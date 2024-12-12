@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "app"
+version = "0.1.0"
+description = ""
+authors = ["Kaiming Guo <me@kaiming.io>"]
+
+[tool.poetry.dependencies]
+python = ">=3.10,<4.0"
+uvicorn = {extras = ["standard"], version = "^0.32.1"}
+fastapi = "^0.115.6"
+python-multipart = "^0.0.19"
+pydantic = {extras = ["email"], version = "^2.10.3"}
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

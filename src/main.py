@@ -3,7 +3,13 @@ import time
 import ipaddress
 from typing import Dict
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, status
+from fastapi.responses import JSONResponse
+
+from src.frontend import init_frontend
+from src.config import settings
+
+ALLOWED_NETWORKS = [ipaddress.ip_network(ip.strip()) for ip in settings.INTERNAL_ALLOWED_LIST]
 
 logger = logging.getLogger("uvicorn.error")
 
@@ -20,15 +26,33 @@ async def add_process_time_header(request: Request, call_next):
 
 
 @app.middleware("http")
-async def ip_logging(request: Request, call_next):
-    client_ip = request.client.host
-    client_ip_obj = ipaddress.ip_address(client_ip)
-    logger.info(f"Client IP: {client_ip_obj}")
+async def ip_restriction(request: Request, call_next):
+    path = request.url.path
+    is_protected = any(path.startswith(protected_path) for protected_path in settings.PROTECTED_PATHS)
+    if is_protected:
+        client_ip = request.client.host
+        client_ip_obj = ipaddress.ip_address(client_ip)
 
-    response = await call_next(request)
-    return response
+        is_allowed = any(
+            client_ip_obj in network
+            for network in ALLOWED_NETWORKS
+        )
+
+        if not is_allowed:
+            return JSONResponse(
+                status_code=status.HTTP_403_FORBIDDEN,
+                content={
+                    "error": "Access denied",
+                    "message": "Your IP is not allowed to access this resource"
+                }
+            )
+
+    return await call_next(request)
 
 
 @app.get("/")
 async def health() -> Dict[str, str]:
     return {"status": "healthy"}
+
+
+init_frontend(app)

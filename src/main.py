@@ -5,7 +5,7 @@ from typing import Dict
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
-from nicegui import app
+from nicegui import app as nicegui_app
 
 from src.config import settings
 from src.frontend import init_frontend
@@ -57,10 +57,13 @@ async def ip_restriction(request: Request, call_next):
 
 @app.middleware("http")
 async def add_host_header(request: Request, call_next):
+    logger.info("Add host header")
     if "x-forwarded-host" in request.headers:
-        host = request.headers["x-forwarded-host"].encode()
-        request.scope["headers"].append((b"host", host))
-        app.storage.user["host"] = host
+        logger.info("update host at {request.headers['x-forwarded-host']}")
+        request.scope["headers"].append(
+            (b"host", request.headers["x-forwarded-host"].encode("utf-8"))
+        )
+        nicegui_app.storage.user["host"] = request.headers["x-forwarded-host"].encode("utf-8")
     return await call_next(request)
 
 

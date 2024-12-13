@@ -9,8 +9,7 @@ from src.config import settings
 def init_frontend(fastapi_app: FastAPI) -> None:
     @ui.page("/")
     def index_page() -> None:
-        port = os.environ.get("PORT", 8000)
-        host = app.storage.user.get("host", f"127.0.0.1:{port}")
+        host = app.storage.user["host"]
         ui.label(f"Hello World from {host}")
 
     ui.run_with(
